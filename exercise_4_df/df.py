@@ -142,7 +142,9 @@ def reaching_definition_analysis(
   transfer = lambda block, ins: union(
     get_definitions(block), minus(ins, get_kills(block, ins))
   )
-  inputs, outputs = forward_worklist(blocks, block0_inputs, merge, transfer)
+  inputs, outputs = worklist(
+    blocks=blocks, init=block0_inputs, merge=merge, transfer=transfer
+  )
   print_inputs_outputs(inputs, outputs, blocks)
 
 
@@ -170,58 +172,46 @@ def live_variables_analysis(
           ins[arg_name].append(instr)
     return ins
 
-  inputs, outputs = backward_worklist(blocks, {}, merge, transfer, return_vars)
+  inputs, outputs = worklist(
+    blocks=blocks, init={}, merge=merge, transfer=transfer, forward=False
+  )
   print_inputs_outputs(inputs, outputs, blocks)
 
 
-def forward_worklist(
+def worklist(
+  *,
   blocks: list[BasicBlock],
   init: InstrSet,
   merge: Callable[[Sequence[InstrSet]], InstrSet],
   transfer: Callable[[BasicBlock, InstrSet], InstrSet],
-  start_init: InstrSet | None = None,
+  forward: bool = True,
 ) -> tuple[dict[str, InstrSet], dict[str, InstrSet]]:
-  outputs = collections.defaultdict(lambda: init)
-  if start_init is not None:
-    outputs['<entry>'] = start_init
-  inputs = {}
+  if forward:
+    in_edges = {b.label: b.preds for b in blocks}
+    out_edges = {b.label: b.succs for b in blocks}
+  else:
+    in_edges = {b.label: b.succs for b in blocks}
+    out_edges = {b.label: b.preds for b in blocks}
+  out_edges = {
+    k: list(set(v) - {'<entry>', '<exit>'}) for k, v in out_edges.items()
+  }
 
-  blocks_by_label = {b.label: b for b in blocks if b.label is not None}
+  outgoing = collections.defaultdict(lambda: init)
+  incoming = {}
+  block_by_label = {b.label: b for b in blocks if b.label is not None}
   worklist = list(blocks)
   while worklist:
-    cur_block = worklist.pop()
-    inputs[cur_block.label] = merge(outputs[pred] for pred in cur_block.preds)
-    new_outputs = transfer(cur_block, inputs[cur_block.label])
-    if new_outputs != outputs[cur_block.label]:
-      outputs[cur_block.label] = new_outputs
-      for succ in set(cur_block.succs) - {'<exit>'}:
-        worklist.append(blocks_by_label[succ])
-  return inputs, outputs
+    curr = worklist.pop()
+    incoming[curr.label] = merge(outgoing[i] for i in in_edges[curr.label])
+    new_outgoing = transfer(curr, incoming[curr.label])
+    if new_outgoing != outgoing[curr.label]:
+      outgoing[curr.label] = new_outgoing
+      worklist.extend(block_by_label[n] for n in out_edges[curr.label])
 
-
-def backward_worklist(
-  blocks: list[BasicBlock],
-  init: InstrSet,
-  merge: Callable[[Sequence[InstrSet]], InstrSet],
-  transfer: Callable[[BasicBlock, InstrSet], InstrSet],
-  terminal_init: InstrSet | None = None,
-) -> tuple[dict[str, InstrSet], dict[str, InstrSet]]:
-  inputs = collections.defaultdict(lambda: init)
-  if terminal_init is not None:
-    inputs['<exit>'] = terminal_init
-  outputs = {}
-
-  blocks_by_label = {b.label: b for b in blocks if b.label is not None}
-  worklist = list(blocks)
-  while worklist:
-    cur_block = worklist.pop()
-    outputs[cur_block.label] = merge(inputs[succ] for succ in cur_block.succs)
-    new_inputs = transfer(cur_block, outputs[cur_block.label])
-    if new_inputs != inputs[cur_block.label]:
-      inputs[cur_block.label] = new_inputs
-      for pred in set(cur_block.preds) - {'<entry>'}:
-        worklist.append(blocks_by_label[pred])
-  return inputs, outputs
+  if forward:
+    return incoming, outgoing
+  else:
+    return outgoing, incoming
 
 
 def analyze(func: dict[str, Any], args: argparse.Namespace) -> None:
