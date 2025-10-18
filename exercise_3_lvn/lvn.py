@@ -4,7 +4,7 @@ import dataclasses
 import itertools
 import json
 import sys
-from typing import Any, TypeAlias
+from typing import Any, Iterator, Mapping, MutableMapping, Sequence, TypeAlias
 
 import dce
 
@@ -19,7 +19,9 @@ class BasicBlock:
   succs: list[str] = dataclasses.field(default_factory=list)
 
 
-def group_instructions(instrs):
+def group_instructions(
+  instrs: list[Instruction],
+) -> Iterator[list[Instruction]]:
   block = []
   for instr in instrs:
     match instr:
@@ -38,7 +40,7 @@ def group_instructions(instrs):
     yield block
 
 
-def form_blocks(instrs):
+def form_blocks(instrs: list[Instruction]) -> list[BasicBlock]:
   blocks = [BasicBlock(instrs=block) for block in group_instructions(instrs)]
   for block_idx, b in enumerate(blocks):
     if 'label' in b.instrs[0]:
@@ -48,7 +50,7 @@ def form_blocks(instrs):
   return blocks
 
 
-def update_preds_succs(blocks):
+def update_preds_succs(blocks: list[BasicBlock]) -> list[BasicBlock]:
   for block_idx, b in enumerate(blocks):
     match b.instrs[-1]:
       case {'op': 'jmp', 'labels': [target]}:
@@ -70,33 +72,7 @@ def update_preds_succs(blocks):
   return blocks
 
 
-def delete_unreachable(blocks):
-  update_preds_succs(blocks)
-  new_blocks = [b for i, b in enumerate(blocks) if i == 0 or b.preds]
-  return new_blocks, len(blocks) != len(new_blocks)
-
-
-def per_block(func):
-  def wrapper(blocks):
-    new_blocks = []
-    changed = False
-    for b in blocks:
-      nb, nc = func(b)
-      new_blocks.append(nb)
-      changed = changed or nc
-    return new_blocks, changed
-
-  return wrapper
-
-
-def converge(blocks, func):
-  changed = True
-  while changed:
-    blocks, changed = func(blocks)
-  return blocks
-
-
-def print_instr(instr: Instruction):
+def print_instr(instr: Instruction) -> None:
   match instr:
     case {'label': label}:
       print(f'.{label}:')
@@ -110,7 +86,11 @@ def print_instr(instr: Instruction):
   print(f'  {instr=}')
 
 
-def print_lvn_state(value_to_vnum, vnum_to_names, var_to_vnum):
+def print_lvn_state(
+  value_to_vnum: Mapping[tuple, int],
+  vnum_to_names: Mapping[int, Sequence[str]],
+  var_to_vnum: Mapping[str, int],
+) -> None:
   vnum_to_vars = collections.defaultdict(list)
   for var, vnum in var_to_vnum.items():
     vnum_to_vars[vnum].append(var)
@@ -236,7 +216,12 @@ def lvn(block: BasicBlock, args: argparse.Namespace) -> None:
       print_lvn_state(value_to_vnum, vnum_to_names, var_to_vnum)
 
 
-def maybe_fold_constants(val, instr, const_vnum_to_val, value_to_vnum):
+def maybe_fold_constants(
+  val: tuple,
+  instr: Instruction,
+  const_vnum_to_val: MutableMapping[int, tuple],
+  value_to_vnum: MutableMapping[tuple, int],
+) -> tuple:
   op, *args = val
   if op == 'const' or not all(arg in const_vnum_to_val for arg in args):
     return val
@@ -268,7 +253,7 @@ def maybe_fold_constants(val, instr, const_vnum_to_val, value_to_vnum):
     return val
 
 
-def canonicalize_args(val):
+def canonicalize_args(val: tuple) -> tuple:
   match val:
     case ('add' | 'mul' | 'eq' | 'and' | 'or' | 'ne', a, b) if a > b:
       return (val[0], b, a)
@@ -284,7 +269,9 @@ def canonicalize_args(val):
       return val
 
 
-def optimize(instructions, args):
+def optimize(
+  instructions: list[Instruction], args: argparse.Namespace
+) -> list[Instruction]:
   blocks = form_blocks(instructions)
   for block in blocks:
     lvn(block, args)
