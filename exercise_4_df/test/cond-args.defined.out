@@ -1,0 +1,13 @@
+@main
+    .block_0:
+        in:  cond
+       out:  a, b, cond
+    .left:
+        in:  a, b, cond
+       out:  a, b, c, cond
+    .right:
+        in:  a, b, cond
+       out:  a, b, c, cond
+    .end:
+        in:  a, b, c, cond
+       out:  a, b, c, cond, d

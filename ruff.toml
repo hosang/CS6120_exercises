@@ -3,3 +3,6 @@ indent-width = 2
 
 [format]
 quote-style = "single"
+
+[lint]
+ignore = ["E731"]
