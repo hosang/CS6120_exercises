@@ -1,0 +1,10 @@
+@main {
+  a: int = const 3;
+  b: int = const 3;
+  jmp continue;
+.continue:
+  sum1: int = add a b;
+  sum2: int = add a a;
+  sum3: int = id sum1;
+  print sum1;
+}

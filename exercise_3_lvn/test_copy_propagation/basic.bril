@@ -1,0 +1,9 @@
+@main {
+  a: int = const 2;
+  b: int = const 3;
+  a_copy: int = id a;
+  b_copy1: int = id b;
+  b_copy2: int = id b_copy1;
+  result: int = add a_copy b_copy2;
+  print result;
+}

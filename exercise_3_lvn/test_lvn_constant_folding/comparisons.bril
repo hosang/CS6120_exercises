@@ -1,0 +1,10 @@
+@main {
+  a: int = const 2;
+  b: int = const 3;
+  is_gt: bool = gt a b;
+  is_ge: bool = ge a b;
+  is_lt: bool = lt a b;
+  is_le: bool = le a b;
+  is_eq: bool = eq a b;
+  is_ne: bool = ne a b;
+}

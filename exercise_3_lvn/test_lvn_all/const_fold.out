@@ -1,0 +1,9 @@
+@main {
+  a: int = const 2;
+  b: int = const 3;
+  prod1: int = const 6;
+  prod2: int = const 6;
+  sum: int = const 36;
+  result: int = const 18;
+  print result;
+}

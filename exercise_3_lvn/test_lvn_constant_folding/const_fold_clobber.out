@@ -1,0 +1,11 @@
+@main {
+  a: int = const 2;
+  b: int = const 3;
+  __lvn_block_0_prod1_0: int = const 6;
+  prod2: int = id __lvn_block_0_prod1_0;
+  __lvn_block_0_prod1_1: int = const 0;
+  prod1: int = id __lvn_block_0_prod1_0;
+  sum: int = const 36;
+  result: int = const 18;
+  print result;
+}

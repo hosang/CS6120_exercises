@@ -1,0 +1,9 @@
+@main {
+  a: int = const 2;
+  jmp .end;
+.dead_block:
+  b: int = const 3;
+  a: int = id b;
+.end:
+  print a;
+}

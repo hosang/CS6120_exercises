@@ -1,0 +1,7 @@
+@main {
+  a: bool = const true;
+  b: bool = const false;
+  and: bool = and a b;
+  or: bool = or a b;
+  not: bool = not a;
+}

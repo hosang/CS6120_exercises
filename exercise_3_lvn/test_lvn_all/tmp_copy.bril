@@ -1,0 +1,21 @@
+@main() {
+  a: int = const 2;
+  b: int = const 42;
+.next_block:
+  v7: int = id b;
+  temp: int = id v7;
+  v8: int = id a;
+  v9: int = id b;
+  # Now v7, tmp, and v9 contain 42 (the original b).
+  v10: int = call @func;
+  b: int = id v10;
+  v11: int = id temp;
+  a: int = id v11;
+
+  print a;
+}
+
+@func: int {
+  val: int = const 2;
+  ret val;
+}

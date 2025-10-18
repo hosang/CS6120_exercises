@@ -1,0 +1,21 @@
+@main {
+  a: int = const 2;
+  b: int = const 3;
+.next_block:
+  res1: int = call @func1 a;
+  print res1;
+  res2: int = call @func1 a;
+  print res2;
+  res3: int = call @func2 a;
+  print res3;
+  res4: int = call @func2 b;
+  print res4;
+}
+@func1(arg: int): int {
+  x: int = const 42;
+  ret x;
+}
+@func2(arg: int): int {
+  x: int = const 42;
+  ret x;
+}

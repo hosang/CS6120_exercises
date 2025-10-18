@@ -1,0 +1,18 @@
+@main {
+  a: int = const 2;
+  b: int = const 42;
+.next_block:
+  v7: int = id b;
+  temp: int = id b;
+  v8: int = id a;
+  v9: int = id b;
+  v10: int = call @func;
+  b: int = id v10;
+  v11: int = id v7;
+  a: int = id v7;
+  print v7;
+}
+@func: int {
+  val: int = const 2;
+  ret val;
+}

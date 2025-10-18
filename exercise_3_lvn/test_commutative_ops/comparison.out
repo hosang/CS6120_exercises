@@ -1,0 +1,16 @@
+@main {
+  a: int = const 2;
+  b: int = const 3;
+  same1: bool = eq a b;
+  same2: bool = id same1;
+  diff1: bool = ne a b;
+  diff2: bool = id diff1;
+  lt1: bool = lt a b;
+  lt2: bool = id lt1;
+  le1: bool = le a b;
+  le2: bool = id le1;
+  gt1: bool = gt a b;
+  gt2: bool = id gt1;
+  ge1: bool = ge a b;
+  ge2: bool = id le1;
+}

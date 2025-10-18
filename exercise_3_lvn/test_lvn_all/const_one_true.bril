@@ -1,0 +1,6 @@
+@main {
+  one: int = const 1;
+  true: bool = const true;
+  print one;
+  print true;
+}

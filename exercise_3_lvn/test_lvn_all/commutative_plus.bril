@@ -1,0 +1,9 @@
+@main() {
+  a: int = const 2;
+  b: int = const 3;
+.next_block:
+  sum1: int = add a b;
+  sum2: int = add b a;
+  result: int = add sum1 sum2;
+  print result;
+}

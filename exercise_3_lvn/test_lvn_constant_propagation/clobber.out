@@ -1,0 +1,7 @@
+@main {
+  __lvn_block_0_a_0: int = const 2;
+  b: int = const 2;
+  c: int = const 2;
+  a: int = const 3;
+  d: int = const 2;
+}

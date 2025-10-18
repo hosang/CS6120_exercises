@@ -1,0 +1,7 @@
+@main {
+  a: int = const 2;
+  b: int = id a;
+  c: int = id b;
+  a: int = const 3;
+  d: int = id c;
+}

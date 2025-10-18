@@ -1,0 +1,6 @@
+@main {
+  b: int = const 3;
+  a: int = const 39;
+  c: int = add a b;
+  print c;
+}

@@ -1,0 +1,58 @@
+extract = 'total_dyn_inst: (\d+)'
+benchmarks = '../bril/benchmarks/*/*.bril'
+timeout = 600
+
+[runs.baseline]
+pipeline = [
+    "bril2json",
+    "brili -p {args}",
+]
+
+[runs.dce]
+pipeline = [
+    "bril2json",
+    "python3 dce.py",
+    "brili -p {args}",
+]
+
+[runs.vanilla]
+pipeline = [
+    "bril2json",
+    "python3 lvn.py -d",
+    "brili -p {args}",
+]
+
+[runs.constant_folding]
+pipeline = [
+    "bril2json",
+    "python3 lvn.py -df",
+    "brili -p {args}",
+]
+
+[runs.constant_propagation]
+pipeline = [
+    "bril2json",
+    "python3 lvn.py -dP",
+    "brili -p {args}",
+]
+
+[runs.copy_propagation]
+pipeline = [
+    "bril2json",
+    "python3 lvn.py -dP",
+    "brili -p {args}",
+]
+
+[runs.commutative_ops]
+pipeline = [
+    "bril2json",
+    "python3 lvn.py -dc",
+    "brili -p {args}",
+]
+
+[runs.all]
+pipeline = [
+    "bril2json",
+    "python3 lvn.py -dfPpc",
+    "brili -p {args}",
+]

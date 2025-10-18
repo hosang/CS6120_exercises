@@ -1,0 +1,12 @@
+@main {
+  a: int = const 2;
+  b: int = const 3;
+  sum1: int = add a b;
+  sum2: int = id sum1;
+  diff1: int = sub a b;
+  diff2: int = sub b a;
+  prod1: int = mul a b;
+  prod2: int = id prod1;
+  quot1: int = div a b;
+  quot2: int = div b a;
+}

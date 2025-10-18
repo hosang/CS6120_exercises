@@ -1,0 +1,10 @@
+@main {
+  a: int = const 2;
+  b: int = const 2;
+  jmp .end;
+.unused:
+  c: int = id b;
+  print c;
+.end:
+  print a;
+}

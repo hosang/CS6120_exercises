@@ -1,0 +1,11 @@
+@main {
+  a: int = const 3;
+.next_block:
+  copy1: int = id a;
+  copy2: int = id a;
+  copy3: int = id a;
+  a: int = const 0;
+  copy1: int = const 0;
+  result: int = id copy2;
+  print copy2;
+}

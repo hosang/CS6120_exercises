@@ -1,0 +1,7 @@
+@main {
+  size: int = const 1024;
+  pointer1: ptr<int> = alloc size;
+  pointer2: ptr<int> = alloc size;
+  print pointer1;
+  print pointer2;
+}

@@ -1,0 +1,10 @@
+@main {
+  a: int = const 2;
+  b: int = const 3;
+  is_gt: bool = const false;
+  is_ge: bool = id is_gt;
+  is_lt: bool = const true;
+  is_le: bool = id is_lt;
+  is_eq: bool = id is_gt;
+  is_ne: bool = id is_lt;
+}

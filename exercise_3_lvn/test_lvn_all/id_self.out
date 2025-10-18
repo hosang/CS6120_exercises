@@ -1,0 +1,8 @@
+@main {
+  a: int = const 3;
+.next_block:
+  __lvn_next_block_b_0: int = add a a;
+  b: int = id __lvn_next_block_b_0;
+  c: int = id __lvn_next_block_b_0;
+  print __lvn_next_block_b_0;
+}
