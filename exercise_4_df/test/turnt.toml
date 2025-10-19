@@ -6,6 +6,6 @@ output."defined.out" = "-"
 command = "bril2json < {filename} | python3 ../df.py live"
 output."live.out" = "-"
 
-# [envs.cprop]
-# command = "bril2json < {filename} | python3 ../df.py cprop"
-# output."cprop.out" = "-"
+[envs.cprop]
+command = "bril2json < {filename} | python3 ../df.py const"
+output."cprop.out" = "-"

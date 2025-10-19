@@ -1,0 +1,7 @@
+@main
+    .block_0:
+        in:  ∅
+       out:  a=[2]
+    .next_block:
+        in:  a=[2]
+       out:  a=[2]

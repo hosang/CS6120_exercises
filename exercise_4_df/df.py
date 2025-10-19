@@ -4,6 +4,7 @@ import argparse
 import collections
 import dataclasses
 import json
+import operator
 import sys
 from typing import Any, Callable, Iterator, Sequence, TypeAlias
 
@@ -128,13 +129,17 @@ def print_inputs_outputs(
   inputs: dict[str, InstrSet],
   outputs: dict[str, InstrSet],
   blocks: list[BasicBlock],
+  *,
+  print_vals: bool = False,
 ) -> None:
   def fmt_instrs(
     b: BasicBlock, i_by_block: dict[str, list[Instruction]]
   ) -> str:
-    insts = i_by_block[b.label]
-    if insts:
-      return ', '.join(sorted(str(instr) for instr in insts))
+    instrs = i_by_block[b.label]
+    if instrs and print_vals:
+      return ', '.join(sorted(f'{k}={sorted(v)}' for k, v in instrs.items()))
+    elif instrs:
+      return ', '.join(sorted(str(instr) for instr in instrs))
     else:
       return '∅'
 
@@ -160,14 +165,6 @@ def reaching_definition_analysis(
 def live_variables_analysis(
   args: list[dict[str, str]], blocks: list[BasicBlock]
 ) -> None:
-  return_vars = collections.defaultdict(list)
-  for b in blocks:
-    for instr in b.instrs:
-      match instr:
-        case {'op': 'ret', 'args': arg_names}:
-          for arg_name in arg_names:
-            return_vars[arg_name].append(instr)
-
   merge = lambda sets: union(*sets)
   transfer = lambda block, outs: union(
     get_use(block), minus(outs, get_gen(block))
@@ -177,6 +174,66 @@ def live_variables_analysis(
     blocks=blocks, init={}, merge=merge, transfer=transfer, forward=False
   )
   print_inputs_outputs(inputs, outputs, blocks)
+
+
+def _const_prop_merge(*sets: Sequence[InstrSet]) -> InstrSet:
+  if not sets:
+    return {}
+  result = {}
+  for consts in sets:
+    for var_name, values in consts.items():
+      if var_name not in result:
+        result[var_name] = values
+      elif result[var_name] != values:
+        result[var_name] = ['?']
+  return result
+
+
+def _const_prop_constants(block: BasicBlock, in_consts: InstrSet) -> InstrSet:
+  consts = in_consts.copy()
+  constprop_ops = {
+    'add': operator.add,
+    'sub': operator.sub,
+    'mul': operator.mul,
+    'div': operator.floordiv,
+    'eq': operator.eq,
+    'ne': operator.ne,
+    'lt': operator.lt,
+    'le': operator.le,
+    'gt': operator.gt,
+    'ge': operator.ge,
+    'and': operator.and_,
+    'or': operator.or_,
+  }
+  for instr in block.instrs:
+    match instr:
+      case {'op': 'const', 'dest': var_name, 'value': val}:
+        consts[var_name] = [val]
+      case {'op': op, 'args': [arg1, arg2], 'dest': dest} if (
+        op in constprop_ops and arg1 in consts and arg2 in consts
+      ):
+        (a,) = consts[arg1]
+        (b,) = consts[arg2]
+        if '?' in (a, b):
+          consts[dest] = ['?']
+        else:
+          consts[dest] = [constprop_ops[op](a, b)]
+      case {'dest': var_name}:
+        if var_name in consts:
+          del consts[var_name]
+  return consts
+
+
+def const_propagation_analysis(
+  args: list[dict[str, str]], blocks: list[BasicBlock]
+) -> None:
+  inputs, outputs = worklist(
+    blocks=blocks,
+    init={},
+    merge=lambda sets: _const_prop_merge(*sets),
+    transfer=lambda block, consts: _const_prop_constants(block, consts),
+  )
+  print_inputs_outputs(inputs, outputs, blocks, print_vals=True)
 
 
 def worklist(
@@ -220,6 +277,8 @@ def analyze(func: dict[str, Any], args: argparse.Namespace) -> None:
       reaching_definition_analysis(func.get('args', []), blocks)
     case 'live':
       live_variables_analysis(func.get('args', []), blocks)
+    case 'const':
+      const_propagation_analysis(func.get('args', []), blocks)
     case _:
       raise ValueError(f'Unknown analysis: {args.analysis}')
 
@@ -227,7 +286,9 @@ def analyze(func: dict[str, Any], args: argparse.Namespace) -> None:
 def main():
   parser = argparse.ArgumentParser(description='Data flow analysis')
   parser.add_argument(
-    'analysis', choices=['defined', 'live'], help='The analysis to perform.'
+    'analysis',
+    choices=['defined', 'live', 'const'],
+    help='The analysis to perform.',
   )
   args = parser.parse_args()
 
