@@ -1,13 +1,13 @@
 @main
     .block_0:
-        in:  cond
-       out:  a, b, cond
+        in:  ∅
+       out:  a, b
     .left:
-        in:  a, b, cond
-       out:  a, b, c, cond
+        in:  a, b
+       out:  a, b, c
     .right:
-        in:  a, b, cond
-       out:  a, b, c, cond
+        in:  a, b
+       out:  a, b, c
     .end:
-        in:  a, b, c, cond
-       out:  a, b, c, cond, d
+        in:  a, b, c
+       out:  a, b, c, d

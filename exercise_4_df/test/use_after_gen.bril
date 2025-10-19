@@ -1,0 +1,8 @@
+@main {
+  a: int = const 2;
+.adds_nothing:
+  b: int = const 3;
+  print b;
+.end:
+  print a;
+}

@@ -1,0 +1,7 @@
+@main
+    .block_0:
+        in:  b
+       out:  a, b
+    .next_block:
+        in:  a, b
+       out:  ∅

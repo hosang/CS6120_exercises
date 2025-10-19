@@ -57,17 +57,15 @@ def update_preds_succs(blocks: list[BasicBlock]) -> list[BasicBlock]:
       case {'op': 'br', 'labels': labels}:
         b.succs.extend(labels)
       case {'op': 'ret'}:
-        b.succs = ['<exit>']
+        b.succs = []
       case _:
         if block_idx + 1 < len(blocks):
           # fallthrough
           b.succs.append(blocks[block_idx + 1].label)
-  blocks[0].preds = ['<entry>']
-  blocks[-1].succs = ['<exit>']
 
   blocks_by_label = {b.label: b for b in blocks if b.label is not None}
   for cur_block in blocks:
-    for succ_name in set(cur_block.succs) - {'<exit>'}:
+    for succ_name in cur_block.succs:
       succ_block = blocks_by_label[succ_name]
       succ_block.preds.append(cur_block.label)
   return blocks
@@ -87,15 +85,27 @@ def get_kills(block: BasicBlock, defs: InstrSet) -> InstrSet:
   return kills
 
 
-def get_definitions(block: BasicBlock) -> InstrSet:
-  defs = collections.defaultdict(list)
+def get_gen(block: BasicBlock) -> InstrSet:
+  gens = {}
   for instr in block.instrs:
     match instr:
       case {'dest': var_name}:
-        defs[var_name].append(instr)
+        gens[var_name] = [instr]
       case _:
         pass
-  return defs
+  return gens
+
+
+def get_use(block: BasicBlock) -> InstrSet:
+  uses = collections.defaultdict(list)
+  defined = set()
+  for instr in block.instrs:
+    if args := instr.get('args', []):
+      for var in set(args) - defined:
+        uses[var].append(instr)
+    if 'dest' in instr:
+      defined.add(instr['dest'])
+  return uses
 
 
 def union(*sets: Sequence[InstrSet]) -> InstrSet:
@@ -137,13 +147,12 @@ def print_inputs_outputs(
 def reaching_definition_analysis(
   args: list[dict[str, str]], blocks: list[BasicBlock]
 ) -> None:
-  block0_inputs = {arg['name']: [arg] for arg in args}
   merge = lambda sets: union(*sets)
   transfer = lambda block, ins: union(
-    get_definitions(block), minus(ins, get_kills(block, ins))
+    get_gen(block), minus(ins, get_kills(block, ins))
   )
   inputs, outputs = worklist(
-    blocks=blocks, init=block0_inputs, merge=merge, transfer=transfer
+    blocks=blocks, init={}, merge=merge, transfer=transfer
   )
   print_inputs_outputs(inputs, outputs, blocks)
 
@@ -160,17 +169,9 @@ def live_variables_analysis(
             return_vars[arg_name].append(instr)
 
   merge = lambda sets: union(*sets)
-
-  def transfer(block: BasicBlock, outs: InstrSet) -> InstrSet:
-    ins = outs.copy()
-    for instr in reversed(block.instrs):
-      if 'dest' in instr:
-        if instr['dest'] in ins:
-          del ins[instr['dest']]
-      if 'args' in instr:
-        for arg_name in instr['args']:
-          ins[arg_name].append(instr)
-    return ins
+  transfer = lambda block, outs: union(
+    get_use(block), minus(outs, get_gen(block))
+  )
 
   inputs, outputs = worklist(
     blocks=blocks, init={}, merge=merge, transfer=transfer, forward=False
@@ -192,9 +193,6 @@ def worklist(
   else:
     in_edges = {b.label: b.succs for b in blocks}
     out_edges = {b.label: b.preds for b in blocks}
-  out_edges = {
-    k: list(set(v) - {'<entry>', '<exit>'}) for k, v in out_edges.items()
-  }
 
   outgoing = collections.defaultdict(lambda: init)
   incoming = {}

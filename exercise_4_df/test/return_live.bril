@@ -1,0 +1,6 @@
+@main(b: int): int {
+  a: int = const 2;
+.next_block:
+  print b;
+  ret a;
+}
