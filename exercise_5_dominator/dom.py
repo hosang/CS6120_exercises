@@ -172,7 +172,7 @@ class Node:
   children: list[str] = dataclasses.field(default_factory=list)
 
 
-def find_dom_tree(blocks: list[BasicBlock]) -> Node:
+def find_dom_tree(blocks: Sequence[BasicBlock]) -> Node:
   doms = find_dominators(blocks)
   entry = blocks[0].label
   entry_doms = frozenset(doms.pop(entry))
@@ -189,6 +189,29 @@ def find_dom_tree(blocks: list[BasicBlock]) -> Node:
   return children_by_block
 
 
+def find_dom_front(blocks: Sequence[BasicBlock]) -> dict[str, list[str]]:
+  # Mapping: a -> set B means a is dominated by all blocks in B.
+  dom_by_block = find_dominators(blocks)
+  # Mapping: a -> set B means a dominates all blocks in B.
+  dominates_by_block = collections.defaultdict(set)
+  for b, doms in dom_by_block.items():
+    for d in doms:
+      dominates_by_block[d].add(b)
+
+  blocks_by_label = {b.label: b for b in blocks}
+  fronts = {}
+  for block in blocks:
+    dom_blocks = dominates_by_block[block.label]
+    sdom_blocks = dom_blocks - {block.label}
+    children = set(
+      itertools.chain.from_iterable(
+        blocks_by_label[b].succs for b in dom_blocks
+      )
+    )
+    fronts[block.label] = sorted(children - sdom_blocks)
+  return fronts
+
+
 def _analyze(func: dict[str, Any], args: argparse.Namespace) -> dict[str, Any]:
   blocks = form_blocks(func['instrs'])
   blocks = update_preds_succs(blocks)
@@ -197,6 +220,8 @@ def _analyze(func: dict[str, Any], args: argparse.Namespace) -> dict[str, Any]:
       return find_dominators(blocks)
     case 'tree':
       return find_dom_tree(blocks)
+    case 'front':
+      return find_dom_front(blocks)
     case _:
       raise NotImplementedError(f'Unknown analysis: {args.analysis}')
 
