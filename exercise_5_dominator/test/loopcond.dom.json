@@ -1,0 +1,33 @@
+{
+  "main": {
+    "entry": [
+      "entry"
+    ],
+    "loop": [
+      "entry",
+      "loop"
+    ],
+    "body": [
+      "body",
+      "entry",
+      "loop"
+    ],
+    "then": [
+      "body",
+      "entry",
+      "loop",
+      "then"
+    ],
+    "endif": [
+      "body",
+      "endif",
+      "entry",
+      "loop"
+    ],
+    "exit": [
+      "entry",
+      "exit",
+      "loop"
+    ]
+  }
+}

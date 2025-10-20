@@ -1,0 +1,19 @@
+{
+  "main": {
+    "while.cond": [
+      "while.body",
+      "while.cond",
+      "while.finish"
+    ],
+    "while.body": [
+      "while.body",
+      "while.cond",
+      "while.finish"
+    ],
+    "while.finish": [
+      "while.body",
+      "while.cond",
+      "while.finish"
+    ]
+  }
+}
