@@ -4,6 +4,7 @@ import argparse
 import collections
 import dataclasses
 import functools
+import itertools
 import json
 import sys
 from typing import Any, Callable, Iterator, Sequence, TypeAlias, TypeVar
@@ -69,7 +70,26 @@ def update_preds_succs(blocks: list[BasicBlock]) -> list[BasicBlock]:
     for succ_name in cur_block.succs:
       succ_block = blocks_by_label[succ_name]
       succ_block.preds.append(cur_block.label)
+
+  if blocks[0].preds:
+    # Make sure we start with a block that has no predecessors.
+    label = _fresh_label(blocks, prefix='entry')
+    blocks.insert(
+      0,
+      BasicBlock(
+        label=label, instrs=[{'label': label}], succs=[blocks[0].label]
+      ),
+    )
+    blocks[1].preds.append(label)
   return blocks
+
+
+def _fresh_label(blocks: list[BasicBlock], prefix: str) -> str:
+  labels = frozenset(b.label for b in blocks)
+  for i in itertools.count(1):
+    label = f'{prefix}.{i}'
+    if label not in labels:
+      return label
 
 
 WorklistSet = TypeVar('WorklistSet')
@@ -132,7 +152,7 @@ def _intersect_pred_doms(sets: Sequence[set]) -> set:
     return set()
 
 
-def find_dominators(orig_blocks: BasicBlock) -> dict[str, list[str]]:
+def find_dominators(orig_blocks: list[BasicBlock]) -> dict[str, list[str]]:
   blocks = list(reversed(sort_postorder(orig_blocks)))
   all_blocks = {b.label for b in blocks}
   _, dom = worklist(
@@ -146,12 +166,37 @@ def find_dominators(orig_blocks: BasicBlock) -> dict[str, list[str]]:
   return dominators
 
 
+@dataclasses.dataclass
+class Node:
+  label: str
+  children: list[str] = dataclasses.field(default_factory=list)
+
+
+def find_dom_tree(blocks: list[BasicBlock]) -> Node:
+  doms = find_dominators(blocks)
+  entry = blocks[0].label
+  entry_doms = frozenset(doms.pop(entry))
+  block_by_doms = {entry_doms: entry}
+  children_by_block = {b.label: [] for b in blocks}
+  while doms:
+    for b in list(doms):
+      b_doms = frozenset(doms[b])
+      parent_doms = b_doms - {b}
+      if parent_doms in block_by_doms:
+        block_by_doms[b_doms] = b
+        children_by_block[block_by_doms[parent_doms]].append(b)
+        del doms[b]
+  return children_by_block
+
+
 def _analyze(func: dict[str, Any], args: argparse.Namespace) -> dict[str, Any]:
   blocks = form_blocks(func['instrs'])
   blocks = update_preds_succs(blocks)
   match args.analysis:
     case 'dom':
       return find_dominators(blocks)
+    case 'tree':
+      return find_dom_tree(blocks)
     case _:
       raise NotImplementedError(f'Unknown analysis: {args.analysis}')
 

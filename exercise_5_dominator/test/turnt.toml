@@ -6,6 +6,6 @@ output."dom.json" = "-"
 # command = "bril2json < {filename} | python3 ../dom.py front"
 # output."front.json" = "-"
 
-# [envs.tree]
-# command = "bril2json < {filename} | python3 ../dom.py tree"
-# output."tree.json" = "-"
+[envs.tree]
+command = "bril2json < {filename} | python3 ../dom.py tree"
+output."tree.json" = "-"

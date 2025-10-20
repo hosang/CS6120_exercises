@@ -1,0 +1,13 @@
+{
+  "main": {
+    "entry.1": [
+      "while.cond"
+    ],
+    "while.cond": [
+      "while.body",
+      "while.finish"
+    ],
+    "while.body": [],
+    "while.finish": []
+  }
+}

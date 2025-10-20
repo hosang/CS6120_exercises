@@ -1,0 +1,18 @@
+{
+  "main": {
+    "entry": [
+      "loop"
+    ],
+    "loop": [
+      "body",
+      "exit"
+    ],
+    "body": [
+      "then",
+      "endif"
+    ],
+    "then": [],
+    "endif": [],
+    "exit": []
+  }
+}
